@@ -52,7 +52,7 @@ plot(mismatch_df$Tracking_ratio, mismatch_df$Mismatch_rate,
      ylab = "Mismatch Rate",
      main = "Mismatch vs Tracking Ratio")
 abline(v = 50)
-legend("topleft", pch = 21,col = 1:8,
+legend("topleft", pch = 16,col = 1:8,
        legend = c("V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8"))
 # pearson cor
 cor(mismatch_df$Tracking_ratio, mismatch_df$Mismatch_rate)
