@@ -17,7 +17,7 @@ if (!require("dplyr")) {
   library(dplyr)
 }
 
-eye_path = function(data, participant, version, trial, eye){
+eye_path = function(data, participant, version, trial, eye, x_min, x_max, y_min, y_max){
   #' draw the eye movement path for a given participant in a given page
   #' with a given eye. A ggplot will be produced.
   #' 
@@ -27,19 +27,16 @@ eye_path = function(data, participant, version, trial, eye){
   #' @param trial: the trial number
   #' @param eye: left eye or right eye
   
-  # assume the max y coordinate is 1000
-  MAX_Y = 1000
-  
   # crate the label so the first 10 percent of the rows have label 1
   # the second 10 percent of the rows have label 2, etc
   # when we plot the eye movement path, the color corresponds to the label
   # could tell us the eye movement order.
   order = as.numeric(cut_number(c(1:nrow(data)), 10))
   data = cbind(data, order)
-  # flip the y-axis
-  data$y = MAX_Y - data$y
   ggplot(data, aes(x = x, y = y)) + 
     geom_point(alpha = 0.5, na.rm = TRUE, aes(color = factor(order))) +
+    xlim(x_min, x_max) + 
+    ylim(y_min, y_max) +
     ggtitle(paste0("Version: ", version, " ", trial, " ", participant, " ", eye))
 }
 
