@@ -61,6 +61,8 @@ condition_summary = function(data, sep, file_name1, file_name2) {
                     Avg_dash_Text = mean(dash_Text, na.rm = TRUE),
                     Avg_dash_ws = mean(dash_ws, na.rm = TRUE),
                     Avg_total_alt = mean(total_alt, na.rm = TRUE),
+                    Avg_weighted_text_image = mean(weighted_text_image, na.rm = TRUE),
+                    Avg_weighted_image_ws = mean(weighted_image_ws, na.rm = TRUE),
                     Avg_weighted_alt = mean(weighted_alt, na.rm = TRUE),
                     Version = as.integer(mean(Version, na.rm = TRUE))
                     )
@@ -97,6 +99,8 @@ condition_summary = function(data, sep, file_name1, file_name2) {
                     Avg_dash_Text = mean(dash_Text, na.rm = TRUE),
                     Avg_dash_ws = mean(dash_ws, na.rm = TRUE),
                     Avg_total_alt = mean(total_alt, na.rm = TRUE),
+                    Avg_weighted_text_image = mean(weighted_text_image, na.rm = TRUE),
+                    Avg_weighted_image_ws = mean(weighted_image_ws, na.rm = TRUE),
                     Avg_weighted_alt = mean(weighted_alt, na.rm = TRUE),
                     Version = as.integer(mean(Version, na.rm = TRUE)))
   write.csv(con1, paste0(file_name1, ".csv"))
@@ -143,6 +147,8 @@ stimulus_summary = function(data, file_name) {
                     Avg_dash_Text = mean(dash_Text, na.rm = TRUE),
                     Avg_dash_ws = mean(dash_ws, na.rm = TRUE),
                     Avg_total_alt = mean(total_alt, na.rm = TRUE),
+                    Avg_weighted_text_image = mean(weighted_text_image, na.rm = TRUE),
+                    Avg_weighted_image_ws = mean(weighted_image_ws, na.rm = TRUE),
                     Avg_weighted_alt = mean(weighted_alt, na.rm = TRUE),
                     Version = as.integer(mean(Version, na.rm = TRUE)))
   write.csv(data, paste0(file_name, ".csv"))
