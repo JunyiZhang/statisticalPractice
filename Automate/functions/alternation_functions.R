@@ -39,8 +39,11 @@ if(!require("stringr")) {
   library(stringr)
 }
 
+# pre-defined color 
+BLUE = c("cadetblue1", "blue", "deepskyblue3", "navyblue", "royalblue1", "turquoise3", "lightseagreen")
+RED = c("red", "darkorange", "tomato1", "violetred4", "mediumorchid2", "violetred2", "sienna3")
 
-alt_plot_trial = function(data, eye, version, trial){
+alt_plot_trial = function(data, eye, version, trial, red = RED, blue = BLUE){
   #' plot the alternation of each participant of a trial
   #' e.g. from text to image
   #' only fixation is considered all the other status are ignored
@@ -50,6 +53,8 @@ alt_plot_trial = function(data, eye, version, trial){
   #'             It should be "left" or "right"
   #' @param version: An int. the version number of the data.
   #' @param trial: An int. The trial number.
+  #' @param blue: a list of blut color. A list of default values is filled in.
+  #' @param red: a list of red color. A list of default value is filled in.
   #' 
   #' @return Print an alternation plot.
   
@@ -126,10 +131,6 @@ alt_plot_trial = function(data, eye, version, trial){
   df_text = data.frame(x = end + max(df$xmax) * 0.05, 
                        y = seq(0.5, (0.5 + 1 * (length(participant_list) - 1)), 1), 
                        label = label)
-  # define the color for each group 
-  # define blue and purplr
-  blue = c("cadetblue1", "blue", "deepskyblue3", "navyblue", "royalblue1", "turquoise3", "lightseagreen")
-  red = c("red", "darkorange", "tomato1", "violetred4", "mediumorchid2", "violetred2", "sienna3")
   
   aoi_cate = unique(aoi)
   text_cate = aoi_cate[grep("Text", aoi_cate)]
@@ -156,7 +157,7 @@ alt_plot_trial = function(data, eye, version, trial){
          caption = "Tracking ratio is appended after ID") 
 }
 
-alt_plot_participant = function(data, eye, id, version){
+alt_plot_participant = function(data, eye, id, version, blue = BLUE, red = RED){
   #' plot the alternation of each trial of a participant
   #' e.g. from text to image
   #' only fixation is considered all the other status are ignored
@@ -165,6 +166,8 @@ alt_plot_participant = function(data, eye, id, version){
   #' @param eye: the eye we focused on in the alternation plot
   #'             It should be "left" or "right"
   #' @param id: The participant id.
+  #' @param blue: a list of blut color. A list of default values is filled in.
+  #' @param red: a list of red color. A list of default value is filled in.
   #' 
   #' @return Print an alternation plot.
   
@@ -239,11 +242,6 @@ alt_plot_participant = function(data, eye, id, version){
   df_text = data.frame(x = end + max(df$xmax) * 0.05, 
                        y = seq(0.5, (0.5 + 1 * (length(trial_list) - 1)), 1), 
                        label = label)
-  
-  # define the color for each group 
-  # define blue and purplr
-  blue = c("cadetblue1", "blue", "deepskyblue3", "navyblue", "royalblue1", "turquoise3", "lightseagreen")
-  red = c("red", "darkorange", "tomato1", "violetred4", "mediumorchid2", "violetred2", "sienna3")
   
   aoi_cate = unique(aoi)
   text_cate = aoi_cate[grep("Text", aoi_cate)]
@@ -359,6 +357,7 @@ alt_stats = function(data, eye, version){
                   dash_Text = integer(),
                   dash_ws = integer(),
                   weighted_text_image = double(),
+                  weighted_image_ws = double(),
                   weighted_alt = double(), 
                   total_alt = integer())
   # loop through all the participants and all the trials
@@ -383,10 +382,12 @@ alt_stats = function(data, eye, version){
                           dash_Text = 0,
                           dash_ws = 0,
                           weighted_text_image = 0,
+                          weighted_image_ws = 0,
                           weighted_alt = 0,
                           total_alt = 0)
       
       text_image_index = c()
+      image_ws_index = c()
       
       # calculate the alternations among different AOIs
       if (nrow(cur) != 0 & length(shift) > 1){
@@ -394,6 +395,8 @@ alt_stats = function(data, eye, version){
           shift_name = paste0(shift[index], "_", shift[index + 1])
           if(shift_name == "Text_Image"){
             text_image_index = c(text_image_index, index)
+          }else if(shift_name == "Image_ws"){
+            image_ws_index = c(image_ws_index, index)
           }
           cur_df[shift_name] = cur_df[shift_name] + 1
         }
@@ -407,8 +410,10 @@ alt_stats = function(data, eye, version){
       cur_df$max_text_time = ifelse(length(max_text_time) != 0, INTERVAL * max(max_text_time), 0)
       
       # calculate the weighted text to image
-      cur_df$weightted_text_image = sum(1 - cumsum(shift_rle$lengths)[text_image_index] / length(cur$AOI))
+      cur_df$weighted_text_image = sum(1 - cumsum(shift_rle$lengths)[text_image_index] / length(cur$AOI))
       
+      # calculate the erighted image to white space
+      cur_df$weighted_image_ws = sum(1 - cumsum(shift_rle$lengths)[image_ws_index] / length(cur$AOI))
       
       # calculate the weighted alternation counts
       weighted_alt = sum(1 - cumsum(shift_rle$lengths) / length(cur$AOI))
@@ -422,7 +427,7 @@ alt_stats = function(data, eye, version){
 }
 
 
-alt_plot_cluster = function(data, eye, cur_cluster, good=NA) {
+alt_plot_cluster = function(data, eye, cur_cluster, good=NA, blue = BLUE, red = RED) {
   #' Plot the alternation plots based on the clustering result
   #' 
   #' @param data: the raw data
@@ -432,6 +437,8 @@ alt_plot_cluster = function(data, eye, cur_cluster, good=NA) {
   #' @param good: optional argument. TRUE if the clustering is for good reader
   #'                                 FALSE if the clustering is for bad reader
   #'                                 NA if not applicable
+  #' @param blue: a list of blut color. A list of default values is filled in.
+  #' @param red: a list of red color. A list of default value is filled in.                              
   #' 
   #' @return print the alternation plot
   #' 
@@ -517,13 +524,6 @@ alt_plot_cluster = function(data, eye, cur_cluster, good=NA) {
   df_text = data.frame(x = end + max(df$xmax) * 0.05, 
                        y = seq(0.5, (0.5 + 1 * (valid - 1)), 1), 
                        label = label)
-  
-  # define the color for each group 
-  # define blue and purplr
-  blue = c("cadetblue1", "blue", "deepskyblue3", 
-           "navyblue", "royalblue1", "turquoise3", "lightseagreen")
-  red = c("red", "darkorange", "tomato1", "violetred4", 
-          "mediumorchid2", "violetred2", "sienna3")
   
   aoi_cate = unique(aoi)
   text_cate = aoi_cate[grep("Text", aoi_cate)]
