@@ -8,7 +8,7 @@
 #' each participant
 
 VERSION_NUM = 6
-by_version = FALSE
+by_trial = FALSE
 by_participant = FALSE
 by_cluster = TRUE
 
@@ -19,12 +19,12 @@ for (v in 1:VERSION_NUM){
   source("~/Desktop/36726 Statistical Practice/Project/code/Altertation/alternation_functions.R")
   
   # read the data for a specific version
-  data = read.table(paste0("Version ", v, " - Raw Data_3-27-2018.txt"), 
+  data = read.table(paste0("Version ", v, " - Raw Data_4-6-2018.txt"), 
                     sep = "\t", header = TRUE, as.is = TRUE)
   
   data = trial_num_fix_raw(data)
   
-  if (by_version == TRUE){
+  if (by_trial == TRUE){
     # reset directory to the folder that stores alternation plots for all the trials 
     # of each participant
     setwd(paste0("~/Desktop/36726 Statistical Practice/Project/data/Alternation Plots/Version ", v, " Trial/"))
