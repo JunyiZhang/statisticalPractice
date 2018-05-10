@@ -9,6 +9,10 @@
 #' 
 
 # STEP 0: Autoset the working directory
+if (!require("rstudioapi")) {
+  install.packages("rstudioapi")
+  suppressMessages(library("rstudioapi"))
+}
 setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 
 # STEP 1: Specifiy which version we are working on, which eye we want to foccus, the export file name

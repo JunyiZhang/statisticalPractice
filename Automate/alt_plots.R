@@ -9,6 +9,10 @@
 #' 
 
 # STEP 0: Autoset the working directory
+if (!require("rstudioapi")) {
+  install.packages("rstudioapi")
+  suppressMessages(library("rstudioapi"))
+}
 setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 
 # STEP 1: Specify the version number and eye we should focus on

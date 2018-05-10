@@ -150,7 +150,7 @@ alt_plot_trial = function(data, eye, version, trial, red = RED, blue = BLUE){
     scale_fill_manual(values = df_color) +
    # scale_fill_brewer(palette = "Paired") + 
     geom_text(data = df_text, mapping = aes(x = x, y = y, label = label), 
-              size = 4, col = "gray30", family = "Times") +
+              size = 4, col = "gray30") +
     xlab("Time (ms)") +
     ylab("Participants") + 
     labs(title = paste("Alternation for version", version, "tiral", trial),
