@@ -5,7 +5,13 @@
 #' 
 #' Version 2.0
 #' 
-#' This file contains all the function needed for the cleaning purpose
+#' This file contains the details of data cleaning process,
+#' including calling other functions and write output files
+
+print("Check the output folder")
+if(!dir.exists("./Output Data/")){
+  dir.create("./Output Data/")
+}
 
 print("Start to process")
 source("./functions/alternation_functions.R")
@@ -51,13 +57,13 @@ ret$Participant = as.character(ret$Participant)
 ret = left_join(ret, alt_df, by = c("Participant", "Trial"))
 ret$Version = version
 # write the output file
-write.csv(ret, paste0(export_name, ".csv"), row.names = FALSE)
+write.csv(ret, paste0("./output\ data/",export_name, ".csv"), row.names = FALSE)
 print("Finish processing long clean data")
 
 source("./functions/condition_summary_functions.R")
 print("Start to calculate clean data by condition")
 # create the condition summary based on the reformatted data
-condition_summary(ret, sep, 
-                  paste0("version ", version, "_", cond1), 
-                  paste0("version ", version, "_", cond2))
+con = condition_summary(ret, sep)
+write.csv(con[[1]], paste0("./output\ data/",export_name, "_",cond1,".csv"), row.names = FALSE)
+write.csv(con[[2]], paste0("./output\ data/",export_name, "_",cond2,".csv"), row.names = FALSE)
 print("Finished!")
