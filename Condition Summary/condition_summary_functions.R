@@ -8,19 +8,18 @@
 
 if (!require("dplyr")) {
   install.packages("dplyr")
-  library(dplyr)
+  suppressMessages(library(dplyr))
 }
 
-condition_summary = function(data, sep, file_name1, file_name2) {
+condition_summary = function(data, sep) {
   #' Separate the reformatted data into two conditions (standard vs other)
   #' aggregate all the stats based on the condition. Two return files are written 
   #' in csv.
   #' 
   #' @param data: the reformatted data
   #' @param sep: the last trial of first condition
-  #' @param file_name1: the export file name for condition 1
-  #' @param file_name2: the export file name for condition 2
   #' 
+  #' @return a list of condition summary
   
   # convert trial number to numeric 
   data$Trial_num = as.numeric(gsub("Trial", "", data$Trial))
@@ -103,8 +102,7 @@ condition_summary = function(data, sep, file_name1, file_name2) {
                     Avg_weighted_image_ws = mean(weighted_image_ws, na.rm = TRUE),
                     Avg_weighted_alt = mean(weighted_alt, na.rm = TRUE),
                     Version = as.integer(mean(Version, na.rm = TRUE)))
-  write.csv(con1, paste0(file_name1, ".csv"))
-  write.csv(con2, paste0(file_name2, ".csv"))
+  return(list(con1, con2))
 }
 
 
