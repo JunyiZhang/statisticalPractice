@@ -1,8 +1,8 @@
 #' CMU MSP 36726 Project
 #' Junyi Zhang
-#' 
+#'
 #' April, 2018
-#' 
+#'
 #' This file contains all the necessary functions that are used to generate
 #' the alternation plots
 
@@ -39,7 +39,7 @@ if(!require("stringr")) {
   library(stringr)
 }
 
-# pre-defined color 
+# pre-defined color
 BLUE = c("cadetblue1", "blue", "deepskyblue3", "navyblue", "royalblue1", "turquoise3", "lightseagreen")
 RED = c("red", "darkorange", "tomato1", "violetred4", "mediumorchid2", "violetred2", "sienna3")
 
@@ -47,7 +47,7 @@ alt_plot_trial = function(data, eye, version, trial, red = RED, blue = BLUE){
   #' plot the alternation of each participant of a trial
   #' e.g. from text to image
   #' only fixation is considered all the other status are ignored
-  #' 
+  #'
   #' @param data: raw data used to generate the plot
   #' @param eye: the eye we focused on in the alternation plot
   #'             It should be "left" or "right"
@@ -55,27 +55,27 @@ alt_plot_trial = function(data, eye, version, trial, red = RED, blue = BLUE){
   #' @param trial: An int. The trial number.
   #' @param blue: a list of blut color. A list of default values is filled in.
   #' @param red: a list of red color. A list of default value is filled in.
-  #' 
+  #'
   #' @return Print an alternation plot.
-  
+
   # the interval between two records
   # 1/60 seconds which is 16.7 ms
   INTERVAL = 16.7
-  
+
   # filter the data and only keep the data with desired eye
   # stop the program if wrong eye input is given
   if(eye == "left") {
-    data = select(data, c(RecordingTime..ms., Trial, 
-                          Participant, Category.Left, AOI.Name.Left, 
-                          Tracking.Ratio....)) 
+    data = select(data, c(RecordingTime..ms., Trial,
+                          Participant, Category.Left, AOI.Name.Left,
+                          Tracking.Ratio....))
   }else if (eye == "right") {
-    data = select(data, c(RecordingTime..ms., Trial, 
-                          Participant, Category.Right, AOI.Name.Right, 
-                          Tracking.Ratio....)) 
+    data = select(data, c(RecordingTime..ms., Trial,
+                          Participant, Category.Right, AOI.Name.Right,
+                          Tracking.Ratio....))
   }else{
     stop("Eye option could only be left or right.")
   }
-  
+
   # rename the data
   names(data) = c("Record_time", "Trial", "Participant",
                   "Category", "AOI", "Tracking_ratio")
@@ -84,7 +84,7 @@ alt_plot_trial = function(data, eye, version, trial, red = RED, blue = BLUE){
   data = filter(data, Category == "Fixation" & Trial == trial)
   # generate a list of participant in the raw data
   participant_list = unique(data$Participant)
-  
+
   # initiliaze all the lists
   # list of coordinates of rect
   xmin = c() # start of fixation
@@ -97,7 +97,7 @@ alt_plot_trial = function(data, eye, version, trial, red = RED, blue = BLUE){
   end = c()
   # list of tracking ratio
   tr = c()
-  
+
   index = 0
   # loop through all the participants
   for (participant in participant_list) {
@@ -120,84 +120,84 @@ alt_plot_trial = function(data, eye, version, trial, red = RED, blue = BLUE){
     tr = c(tr, mean(p_data$Tracking_ratio))
     index = index + 1
   }
-  
+
   tr = as.integer(tr)
   # concatenate the participant id with tracking ratio
   label = paste(participant_list, tr)
-  
+
   # df stores all the coordinates for rect
   df = data.frame(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, AOI = aoi)
   # df stores all the corrdinates for text (id + tr)
-  df_text = data.frame(x = end + max(df$xmax) * 0.05, 
-                       y = seq(0.5, (0.5 + 1 * (length(participant_list) - 1)), 1), 
+  df_text = data.frame(x = end + max(df$xmax) * 0.05,
+                       y = seq(0.5, (0.5 + 1 * (length(participant_list) - 1)), 1),
                        label = label)
-  
+
   aoi_cate = unique(aoi)
   text_cate = aoi_cate[grep("Text", aoi_cate)]
   text_col = blue[1:length(text_cate)]
-  image_cate = aoi_cate[grep("Image", aoi_cate)]
+  image_cate = aoi_cate[grep("Image|Extraneous|Relevant", aoi_cate)]
   image_col = red[1:length(image_cate)]
   # the first two colors are for - and white space
   df_color = c("palegreen", "white", text_col, image_col)
   names(df_color) = c("-", "White Space", text_cate, image_cate)
-  
-  
+
+
   # make the plot
-  ggplot() + 
-    geom_rect(data = df, 
-              mapping = aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = AOI), 
+  ggplot() +
+    geom_rect(data = df,
+              mapping = aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = AOI),
               alpha = 0.5) +
     scale_fill_manual(values = df_color) +
-   # scale_fill_brewer(palette = "Paired") + 
-    geom_text(data = df_text, mapping = aes(x = x, y = y, label = label), 
+   # scale_fill_brewer(palette = "Paired") +
+    geom_text(data = df_text, mapping = aes(x = x, y = y, label = label),
               size = 4, col = "gray30", family = "Times") +
     xlab("Time (ms)") +
-    ylab("Participants") + 
+    ylab("Participants") +
     labs(title = paste("Alternation for version", version, "tiral", trial),
-         caption = "Tracking ratio is appended after ID") 
+         caption = "Tracking ratio is appended after ID")
 }
 
 alt_plot_participant = function(data, eye, id, version, blue = BLUE, red = RED){
   #' plot the alternation of each trial of a participant
   #' e.g. from text to image
   #' only fixation is considered all the other status are ignored
-  #' 
+  #'
   #' @param data: raw data used to generate the plot
   #' @param eye: the eye we focused on in the alternation plot
   #'             It should be "left" or "right"
   #' @param id: The participant id.
   #' @param blue: a list of blut color. A list of default values is filled in.
   #' @param red: a list of red color. A list of default value is filled in.
-  #' 
+  #'
   #' @return Print an alternation plot.
-  
+
   # the interval between two records
   # 1/60 seconds which is 16.7 ms
   INTERVAL = 16.7
-  
+
   # filter the data and only keep the data with desired eye
   # stop the program if wrong eye input is given
   if(eye == "left") {
-    data = select(data, c(RecordingTime..ms., Trial, 
+    data = select(data, c(RecordingTime..ms., Trial,
                           Participant, Category.Left, AOI.Name.Left,
-                          Tracking.Ratio....)) 
+                          Tracking.Ratio....))
   }else if (eye == "right") {
-    data = select(data, c(RecordingTime..ms., Trial, 
+    data = select(data, c(RecordingTime..ms., Trial,
                           Participant, Category.Right, AOI.Name.Right,
-                          Tracking.Ratio....)) 
+                          Tracking.Ratio....))
   }else{
     stop("Eye option could only be left or right.")
   }
-  
+
   # rename the data
   names(data) = c("Record_time", "Trial", "Participant", "Category", "AOI", "Tracking_ratio")
   # filter the data and only keeps the desired participant
   data$Trial = as.numeric(gsub("Trial", "", data$Trial))
   data = filter(data, Category == "Fixation" & Participant == id)
-  
+
   # list of trials
   trial_list = unique(data$Trial)
-  
+
   # initiliaze all the lists
   # list of coordinates of rect
   xmin = c() # start of fixation
@@ -207,7 +207,7 @@ alt_plot_participant = function(data, eye, id, version, blue = BLUE, red = RED){
   aoi = c() # list of aoi
   end = c()
   tr = c() # list of tracking ratio
-  
+
   index = 0
   # loop through all the trials
   for(t in trial_list){
@@ -230,51 +230,51 @@ alt_plot_participant = function(data, eye, id, version, blue = BLUE, red = RED){
     tr = c(tr, mean(t_data$Tracking_ratio))
     index = index + 1
   }
-  
+
   tr = as.integer(tr)
-  
+
   # concatenate the trial number with tracking ratio
   label = paste("Trial", trial_list, tr)
-  
+
   # df stores all the coordinates for rect
   df = data.frame(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, AOI = aoi)
   # df stores all the corrdinates for text (trial + tr)
-  df_text = data.frame(x = end + max(df$xmax) * 0.05, 
-                       y = seq(0.5, (0.5 + 1 * (length(trial_list) - 1)), 1), 
+  df_text = data.frame(x = end + max(df$xmax) * 0.05,
+                       y = seq(0.5, (0.5 + 1 * (length(trial_list) - 1)), 1),
                        label = label)
-  
+
   aoi_cate = unique(aoi)
   text_cate = aoi_cate[grep("Text", aoi_cate)]
   text_col = blue[1:length(text_cate)]
-  image_cate = aoi_cate[grep("Image", aoi_cate)]
+  image_cate = aoi_cate[grep("Image|Extraneous|Relevant", aoi_cate)]
   image_col = red[1:length(image_cate)]
   # the first two colors are for - and white space
   df_color = c("palegreen", "white", text_col, image_col)
   names(df_color) = c("-", "White Space", text_cate, image_cate)
-  
+
   # make the plot
-  ggplot() + 
-    geom_rect(data = df, 
-              mapping = aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = AOI), 
+  ggplot() +
+    geom_rect(data = df,
+              mapping = aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = AOI),
               alpha = 0.5) +
     scale_fill_manual(values = df_color) +
     geom_text(data = df_text, mapping = aes(x = x, y = y, label = label), size = 4) +
     xlab("Time (ms)") +
-    ylab("Trial") + 
+    ylab("Trial") +
     labs(title = paste("Alternation for participant", id, "Version", version),
-         caption = "Tracking ratio is appended after trial number") 
+         caption = "Tracking ratio is appended after trial number")
 }
 
 trial_num_fix_raw = function(data){
-  #' fix the trial number for any dataset. The idea is the number of stimulus 
-  #' and trial number should be same. Find a participant who has correct trial 
-  #' number and stimulus. Replace all the incorrect trial numbers based on the 
+  #' fix the trial number for any dataset. The idea is the number of stimulus
+  #' and trial number should be same. Find a participant who has correct trial
+  #' number and stimulus. Replace all the incorrect trial numbers based on the
   #' correct one-to-one map we found.
-  #' 
+  #'
   #' @param data: the dataframed to be fixed
-  #' 
+  #'
   #' @return data: the fixed dataframe
-  
+
   # get a unique participant list
   participant_list = unique(data$Participant)
   # loop through all the participants and find the first one
@@ -290,7 +290,7 @@ trial_num_fix_raw = function(data){
   # loop through all the participant
   for (par in participant_list) {
     p_data = filter(data, Participant == par)
-    # if the trial number is wrong, fix the trial number based on the correct 
+    # if the trial number is wrong, fix the trial number based on the correct
     # one we found
     if (length(unique(p_data$Trial)) != length(unique(p_data$Stimulus))) {
       p_data$Trial = sapply(as.character(p_data$Stimulus), function(x) ts_df[[x]])
@@ -302,33 +302,33 @@ trial_num_fix_raw = function(data){
 
 
 alt_stats = function(data, eye, version){
-  #' Calculate the alternation (i.e. the alternation from one AOI to another) 
+  #' Calculate the alternation (i.e. the alternation from one AOI to another)
   #' stats using the raw data
-  #' 
+  #'
   #' @param data: the raw data
   #' @param eye: the eye we focus on, either left or right
   #' @param version: the version of the study
-  #' 
+  #'
   #' @return df: the dataframe contains all the alternation stats
-  
+
   # the interval between two records
   # 1/60 seconds which is 16.7 ms
   INTERVAL = 16.7
-  
+
   # filter the data and only keep the data with desired eye
   # stop the program if wrong eye input is given
   if( eye == "left") {
-    data = select(data, c(Trial, Participant, 
+    data = select(data, c(Trial, Participant,
                           Category.Left, AOI.Group.Left,
-                          Tracking.Ratio....)) 
+                          Tracking.Ratio....))
   }else if (eye == "right") {
-    data = select(data, c(Trial, Participant, 
+    data = select(data, c(Trial, Participant,
                           Category.Right, AOI.Group.Right,
-                          Tracking.Ratio....)) 
+                          Tracking.Ratio....))
   }else{
     stop("Eye option could only be left or right.")
   }
-  
+
   # rename the variables
   names(data) = c("Trial", "Participant", "Category","AOI", "Tracking_ratio")
   data = filter(data, data$Category == "Fixation")
@@ -336,10 +336,10 @@ alt_stats = function(data, eye, version){
   data$AOI[data$AOI == "-"] = "dash"
   data$AOI = trimws(data$AOI, which = "both")
   data$Trial = as.numeric(gsub("Trial", "", data$Trial))
-  
+
   p_list = unique(data$Participant)
   t_list = unique(data$Trial)
-  
+
   # initialize the return dataframe
   df = data.frame(Participant = character(),
                   Trial = character(),
@@ -347,18 +347,32 @@ alt_stats = function(data, eye, version){
                   ws_Text = integer(),
                   ws_Image = integer(),
                   ws_dash = integer(),
+                  ws_Relevant = integer(),
+                  ws_Extraneous = integer(),
                   Text_Image = integer(),
                   Text_ws = integer(),
                   Text_dash = integer(),
+                  Text_Relevant = integer(),
+                  Text_Extraneous = integer(),
                   Image_Text = integer(),
                   Image_ws = integer(),
                   Image_dash = integer(),
+                  Relevant_Text = integer(),
+                  Relevant_ws = integer(),
+                  Relevant_dash = integer(),
+                  Relevant_Extraneous = integer(),
+                  Extraneous_Text = integer(),
+                  Extraneous_ws = integer(),
+                  Extraneous_dash = integer(),
+                  Extraneous_Relevant = integer(),
                   dash_Image = integer(),
                   dash_Text = integer(),
                   dash_ws = integer(),
+                  dash_Relevant = integer(),
+                  dash_Extraneous = integer(),
                   weighted_text_image = double(),
                   weighted_image_ws = double(),
-                  weighted_alt = double(), 
+                  weighted_alt = double(),
                   total_alt = integer())
   # loop through all the participants and all the trials
   for (p in p_list) {
@@ -372,53 +386,76 @@ alt_stats = function(data, eye, version){
                           ws_Text = 0,
                           ws_Image = 0,
                           ws_dash = 0,
+                          ws_Relevant = 0,
+                          ws_Extraneous = 0,
                           Text_Image = 0,
                           Text_ws = 0,
                           Text_dash = 0,
+                          Text_Relevant = 0,
+                          Text_Extraneous = 0,
                           Image_Text = 0,
                           Image_ws = 0,
                           Image_dash = 0,
+                          Relevant_Text = 0,
+                          Relevant_ws = 0,
+                          Relevant_dash = 0,
+                          Relevant_Extraneous = 0,
+                          Extraneous_Text = 0,
+                          Extraneous_ws = 0,
+                          Extraneous_dash = 0,
+                          Extraneous_Relevant = 0,
                           dash_Image = 0,
                           dash_Text = 0,
                           dash_ws = 0,
+                          dash_Relevant = 0,
+                          dash_Extraneous = 0,
                           weighted_text_image = 0,
                           weighted_image_ws = 0,
                           weighted_alt = 0,
                           total_alt = 0)
-      
+
       text_image_index = c()
       image_ws_index = c()
-      
+
       # calculate the alternations among different AOIs
       if (nrow(cur) != 0 & length(shift) > 1){
         for (index in 1:(length(shift) - 1)){
-          shift_name = paste0(shift[index], "_", shift[index + 1])
-          if(shift_name == "Text_Image"){
+          from_name = shift[index]
+          to_name = shift[index + 1]
+          shift_name = paste0(from_name, "_", to_name)
+          if(shift_name == "Text_Image" || shift_name == "Text_Relevant" || shift_name == 'Text_Extraneous'){
             text_image_index = c(text_image_index, index)
           }else if(shift_name == "Image_ws"){
             image_ws_index = c(image_ws_index, index)
           }
           cur_df[shift_name] = cur_df[shift_name] + 1
+          if(grepl('Relevant', shift_name, fixed = TRUE) || grepl('Extraneous', shift_name, fixed = TRUE)){
+            shift_image_name = gsub('Relevant', 'Image', shift_name)
+            shift_image_name = gsub('Extraneous', 'Image', shift_image_name)
+            if (shift_image_name != 'Image_Image'){
+              cur_df[shift_image_name] = cur_df[shift_image_name] + 1
+            }
+          }
         }
       }
-      
+
       # calculate the total alternations
       cur_df$total_alt = length(shift) + 1
-      
+
       # calculate the max text time
       max_text_time = shift_rle$lengths[which(shift_rle$values == "Text")]
       cur_df$max_text_time = ifelse(length(max_text_time) != 0, INTERVAL * max(max_text_time), 0)
-      
+
       # calculate the weighted text to image
       cur_df$weighted_text_image = sum(1 - cumsum(shift_rle$lengths)[text_image_index] / length(cur$AOI))
-      
-      # calculate the erighted image to white space
+
+      # calculate the weighted image to white space
       cur_df$weighted_image_ws = sum(1 - cumsum(shift_rle$lengths)[image_ws_index] / length(cur$AOI))
-      
+
       # calculate the weighted alternation counts
       weighted_alt = sum(1 - cumsum(shift_rle$lengths) / length(cur$AOI))
       cur_df$weighted_alt = weighted_alt
-      
+
       # bind the data frame
       df = rbind(df, cur_df)
     }
@@ -429,7 +466,7 @@ alt_stats = function(data, eye, version){
 
 alt_plot_cluster = function(data, eye, cur_cluster, good=NA, blue = BLUE, red = RED) {
   #' Plot the alternation plots based on the clustering result
-  #' 
+  #'
   #' @param data: the raw data
   #' @param eye: the eye we focus on, either left or right
   #' @param cur_cluster: the clustering dataframe. Should have participant id,
@@ -438,16 +475,16 @@ alt_plot_cluster = function(data, eye, cur_cluster, good=NA, blue = BLUE, red = 
   #'                                 FALSE if the clustering is for bad reader
   #'                                 NA if not applicable
   #' @param blue: a list of blut color. A list of default values is filled in.
-  #' @param red: a list of red color. A list of default value is filled in.                              
-  #' 
+  #' @param red: a list of red color. A list of default value is filled in.
+  #'
   #' @return print the alternation plot
-  #' 
-  #'              
-  
+  #'
+  #'
+
   # the interval between two records
   # 1/60 seconds which is 16.7 ms
   INTERVAL = 16.7
-  
+
   if  (good == TRUE) {
     good = "Good Reader"
   } else if(good == FALSE) {
@@ -455,17 +492,17 @@ alt_plot_cluster = function(data, eye, cur_cluster, good=NA, blue = BLUE, red = 
   } else {
     good = ""
   }
-  
+
   # filter the data and only keep the data with desired eye
   # stop the program if wrong eye input is given
   if(eye == "left") {
-    data = select(data, c(RecordingTime..ms., Trial, 
+    data = select(data, c(RecordingTime..ms., Trial,
                           Participant, Category.Left, AOI.Name.Left,
-                          Tracking.Ratio....)) 
+                          Tracking.Ratio....))
   }else if (eye == "right") {
-    data = select(data, c(RecordingTime..ms., Trial, 
+    data = select(data, c(RecordingTime..ms., Trial,
                           Participant, Category.Right, AOI.Name.Right,
-                          Tracking.Ratio....)) 
+                          Tracking.Ratio....))
   }else{
     stop("Eye option could only be left or right.")
   }
@@ -473,12 +510,12 @@ alt_plot_cluster = function(data, eye, cur_cluster, good=NA, blue = BLUE, red = 
   names(data) = c("Record_time", "Trial", "Participant", "Category", "AOI", "Tracking_ratio")
   data = filter(data, Category == "Fixation")
   data$Trial = as.numeric(gsub("Trial", "", data$Trial))
-  
+
   if (typeof(cur_cluster$Trial) != "integer"){
     cur_cluster$Trial = as.numeric(gsub("Trial", "", cur_cluster$Trial))
   }
 
-  
+
   # initiliaze all the lists
   # list of coordinates of rect
   xmin = c() # start of fixation
@@ -489,13 +526,13 @@ alt_plot_cluster = function(data, eye, cur_cluster, good=NA, blue = BLUE, red = 
   end = c()
   tr = c() # list of tracking ratio
   label = c()
-  
+
   index = 0
   valid = 0
-  
+
   for (row in 1:nrow(cur_cluster)) {
     c_data = filter(data, Participant == cur_cluster$Participant[row] & Trial == cur_cluster$Trial[row])
-    if (length(c_data$AOI) != 0) { 
+    if (length(c_data$AOI) != 0) {
       mark = cumsum(rle(c_data$AOI)$length) * INTERVAL
       end = c(end, mark[length(mark)])
       xmax = c(xmax, mark)
@@ -517,32 +554,32 @@ alt_plot_cluster = function(data, eye, cur_cluster, good=NA, blue = BLUE, red = 
       valid = valid + 1
     }
   }
-  
+
   # df stores all the coordinates for rect
   df = data.frame(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, AOI = aoi)
   # df stores all the corrdinates for text (trial + tracking ratio)
-  df_text = data.frame(x = end + max(df$xmax) * 0.05, 
-                       y = seq(0.5, (0.5 + 1 * (valid - 1)), 1), 
+  df_text = data.frame(x = end + max(df$xmax) * 0.05,
+                       y = seq(0.5, (0.5 + 1 * (valid - 1)), 1),
                        label = label)
-  
+
   aoi_cate = unique(aoi)
   text_cate = aoi_cate[grep("Text", aoi_cate)]
   text_col = blue[1:length(text_cate)]
-  image_cate = aoi_cate[grep("Image", aoi_cate)]
+  image_cate = aoi_cate[grep("Image|Extraneous|Relevant", aoi_cate)]
   image_col = red[1:length(image_cate)]
   # the first two colors are for - and white space
   df_color = c("palegreen", "white", text_col, image_col)
   names(df_color) = c("-", "White Space", text_cate, image_cate)
-  
+
   # make the plot
-  ggplot() + 
-    geom_rect(data = df, 
-              mapping = aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = AOI), 
+  ggplot() +
+    geom_rect(data = df,
+              mapping = aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = AOI),
               alpha = 0.5) +
     scale_fill_manual(values = df_color) +
     geom_text(data = df_text, mapping = aes(x = x, y = y, label = label), size = 4) +
     xlab("Time (ms)") +
-    ylab("Trial") + 
+    ylab("Trial") +
     labs(title = paste("Alternation for cluster", cur_cluster$Cluster[1], " ", good),
-         caption = "Tracking ratio is appended after trial number") 
+         caption = "Tracking ratio is appended after trial number")
 }
