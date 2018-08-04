@@ -13,15 +13,15 @@ if (!require("dplyr")) {
 
 condition_summary = function(data, sep) {
   #' Separate the reformatted data into two conditions (standard vs other)
-  #' aggregate all the stats based on the condition. Two return files are written 
+  #' aggregate all the stats based on the condition. Two return files are written
   #' in csv.
-  #' 
+  #'
   #' @param data: the reformatted data
   #' @param sep: the last trial of first condition
-  #' 
+  #'
   #' @return a list of condition summary
-  
-  # convert trial number to numeric 
+
+  # convert trial number to numeric
   data$Trial_num = as.numeric(gsub("Trial", "", data$Trial))
   # separate tew conditions
   con1 = filter(data, Trial_num <= sep)
@@ -50,21 +50,34 @@ condition_summary = function(data, sep) {
                     Avg_ws_Text = mean(ws_Text, na.rm = TRUE),
                     Avg_ws_Image = mean(ws_Image, na.rm = TRUE),
                     Avg_ws_dash = mean(ws_dash, na.rm = TRUE),
+                    Avg_ws_Relevant = mean(ws_Relevant, na.rm = TRUE),
+                    Avg_ws_Extraneous = mean(ws_Extraneous, na.rm = TRUE),
                     Avg_Text_Image = mean(Text_Image, na.rm = TRUE),
                     Avg_Text_ws = mean(Text_ws, na.rm = TRUE),
                     Avg_Text_dash = mean(Text_dash, na.rm = TRUE),
+                    Avg_Text_Relevant = mean(Text_Relevant, na.rm = TRUE),
+                    Avg_Text_Extraneous = mean(Text_Extraneous, na.rm = TRUE),
                     Avg_Image_Text = mean(Image_Text, na.rm = TRUE),
                     Avg_Image_ws = mean(Image_ws, na.rm = TRUE),
                     Avg_Image_dash = mean(Image_dash, na.rm = TRUE),
+                    Avg_Relevant_Text = mean(Relevant_Text, na.rm = TRUE),
+                    Avg_Relevant_ws = mean(Relevant_ws, na.rm = TRUE),
+                    Avg_Relevant_dash = mean(Relevant_dash, na.rm = TRUE),
+                    Avg_Relevant_Extraneous = mean(Relevant_Extraneous, na.rm = TRUE),
+                    Avg_Extraneous_Text = mean(Extraneous_Text, na.rm = TRUE),
+                    Avg_Extraneous_ws = mean(Extraneous_ws, na.rm = TRUE),
+                    Avg_Extraneous_dash = mean(Extraneous_dash, na.rm = TRUE),
+                    Avg_Extraneous_Relevant = mean(Extraneous_Relevant, na.rm = TRUE),
                     Avg_dash_Image = mean(dash_Image, na.rm = TRUE),
                     Avg_dash_Text = mean(dash_Text, na.rm = TRUE),
                     Avg_dash_ws = mean(dash_ws, na.rm = TRUE),
+                    Avg_dash_Relevant = mean(dash_Relevant, na.rm = TRUE),
+                    Avg_dash_Extraneous = mean(dash_Extraneous, na.rm = TRUE),
                     Avg_total_alt = mean(total_alt, na.rm = TRUE),
                     Avg_weighted_text_image = mean(weighted_text_image, na.rm = TRUE),
                     Avg_weighted_image_ws = mean(weighted_image_ws, na.rm = TRUE),
                     Avg_weighted_alt = mean(weighted_alt, na.rm = TRUE),
-                    Version = as.integer(mean(Version, na.rm = TRUE))
-                    )
+                    Version = as.integer(mean(Version, na.rm = TRUE)))
 
   con2 = con2 %>%
           group_by(Participant) %>%
@@ -88,15 +101,29 @@ condition_summary = function(data, sep) {
                     Avg_ws_Text = mean(ws_Text, na.rm = TRUE),
                     Avg_ws_Image = mean(ws_Image, na.rm = TRUE),
                     Avg_ws_dash = mean(ws_dash, na.rm = TRUE),
+                    Avg_ws_Relevant = mean(ws_Relevant, na.rm = TRUE),
+                    Avg_ws_Extraneous = mean(ws_Extraneous, na.rm = TRUE),
                     Avg_Text_Image = mean(Text_Image, na.rm = TRUE),
                     Avg_Text_ws = mean(Text_ws, na.rm = TRUE),
                     Avg_Text_dash = mean(Text_dash, na.rm = TRUE),
+                    Avg_Text_Relevant = mean(Text_Relevant, na.rm = TRUE),
+                    Avg_Text_Extraneous = mean(Text_Extraneous, na.rm = TRUE),
                     Avg_Image_Text = mean(Image_Text, na.rm = TRUE),
                     Avg_Image_ws = mean(Image_ws, na.rm = TRUE),
                     Avg_Image_dash = mean(Image_dash, na.rm = TRUE),
+                    Avg_Relevant_Text = mean(Relevant_Text, na.rm = TRUE),
+                    Avg_Relevant_ws = mean(Relevant_ws, na.rm = TRUE),
+                    Avg_Relevant_dash = mean(Relevant_dash, na.rm = TRUE),
+                    Avg_Relevant_Extraneous = mean(Relevant_Extraneous, na.rm = TRUE),
+                    Avg_Extraneous_Text = mean(Extraneous_Text, na.rm = TRUE),
+                    Avg_Extraneous_ws = mean(Extraneous_ws, na.rm = TRUE),
+                    Avg_Extraneous_dash = mean(Extraneous_dash, na.rm = TRUE),
+                    Avg_Extraneous_Relevant = mean(Extraneous_Relevant, na.rm = TRUE),
                     Avg_dash_Image = mean(dash_Image, na.rm = TRUE),
                     Avg_dash_Text = mean(dash_Text, na.rm = TRUE),
                     Avg_dash_ws = mean(dash_ws, na.rm = TRUE),
+                    Avg_dash_Relevant = mean(dash_Relevant, na.rm = TRUE),
+                    Avg_dash_Extraneous = mean(dash_Extraneous, na.rm = TRUE),
                     Avg_total_alt = mean(total_alt, na.rm = TRUE),
                     Avg_weighted_text_image = mean(weighted_text_image, na.rm = TRUE),
                     Avg_weighted_image_ws = mean(weighted_image_ws, na.rm = TRUE),
@@ -109,10 +136,10 @@ condition_summary = function(data, sep) {
 stimulus_summary = function(data, file_name) {
   #' Aggregate all the variables in reformatted data over participant and condition
   #' Write the export file in csv
-  #' 
+  #'
   #' @param data: the reformatted data
   #' @param file_name: the export file name
-  
+
   data = data %>%
           group_by(Participant, Condition) %>%
           summarise(Avg_trial_dur = mean(Trial_dur, na.rm = TRUE),
@@ -135,15 +162,29 @@ stimulus_summary = function(data, file_name) {
                     Avg_ws_Text = mean(ws_Text, na.rm = TRUE),
                     Avg_ws_Image = mean(ws_Image, na.rm = TRUE),
                     Avg_ws_dash = mean(ws_dash, na.rm = TRUE),
+                    Avg_ws_Relevant = mean(ws_Relevant, na.rm = TRUE),
+                    Avg_ws_Extraneous = mean(ws_Extraneous, na.rm = TRUE),
                     Avg_Text_Image = mean(Text_Image, na.rm = TRUE),
                     Avg_Text_ws = mean(Text_ws, na.rm = TRUE),
                     Avg_Text_dash = mean(Text_dash, na.rm = TRUE),
+                    Avg_Text_Relevant = mean(Text_Relevant, na.rm = TRUE),
+                    Avg_Text_Extraneous = mean(Text_Extraneous, na.rm = TRUE),
                     Avg_Image_Text = mean(Image_Text, na.rm = TRUE),
                     Avg_Image_ws = mean(Image_ws, na.rm = TRUE),
                     Avg_Image_dash = mean(Image_dash, na.rm = TRUE),
+                    Avg_Relevant_Text = mean(Relevant_Text, na.rm = TRUE),
+                    Avg_Relevant_ws = mean(Relevant_ws, na.rm = TRUE),
+                    Avg_Relevant_dash = mean(Relevant_dash, na.rm = TRUE),
+                    Avg_Relevant_Extraneous = mean(Relevant_Extraneous, na.rm = TRUE),
+                    Avg_Extraneous_Text = mean(Extraneous_Text, na.rm = TRUE),
+                    Avg_Extraneous_ws = mean(Extraneous_ws, na.rm = TRUE),
+                    Avg_Extraneous_dash = mean(Extraneous_dash, na.rm = TRUE),
+                    Avg_Extraneous_Relevant = mean(Extraneous_Relevant, na.rm = TRUE),
                     Avg_dash_Image = mean(dash_Image, na.rm = TRUE),
                     Avg_dash_Text = mean(dash_Text, na.rm = TRUE),
                     Avg_dash_ws = mean(dash_ws, na.rm = TRUE),
+                    Avg_dash_Relevant = mean(dash_Relevant, na.rm = TRUE),
+                    Avg_dash_Extraneous = mean(dash_Extraneous, na.rm = TRUE),
                     Avg_total_alt = mean(total_alt, na.rm = TRUE),
                     Avg_weighted_text_image = mean(weighted_text_image, na.rm = TRUE),
                     Avg_weighted_image_ws = mean(weighted_image_ws, na.rm = TRUE),

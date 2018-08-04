@@ -1,9 +1,9 @@
 #' CMU MSP 36726 Project
 #' Junyi Zhang, Rebecca Gu, Dejia Su
 #' 
-#' Update time : May 9th, 2018
+#' Update time : July, 2018
 #' 
-#' Version 2.2
+#' Version 3.0
 #' 
 #' This script is the interface for the whole data cleaning process.
 #' 

@@ -1,7 +1,7 @@
 #' CMU MSP 36726 Project
 #' Junyi Zhang
 #'
-#' April, 2018
+#' July, 2018
 #'
 #' This file contains all the necessary functions that are used to reformat the
 #' exported data.
@@ -14,7 +14,7 @@ if( !require("dplyr")) {
 }
 
 
-reformat = function(blanks, fix_image, fix_text, fsb_counts, trial_dur){
+reformat = function(blanks, fix_image, fix_text, fsb_counts, trial_dur, fix_extr = NA, fix_relevant = NA){
   #' join blanks, image fixation, text fixation, fixation saccade and blinks counts
   #' and trial duration together based on participant id, stimulus and trial number.
   #'
@@ -24,6 +24,8 @@ reformat = function(blanks, fix_image, fix_text, fsb_counts, trial_dur){
   #' @param blanks: a dataframe. Output of proc_blanks function
   #' @param fix_image: a dataframe. Output of proc_image function
   #' @param fix_text: a dataframe. Output of proc_text function
+  #' @param fix_extr: a dataframe. Output of proc_extr function
+  #' @param fix_relevant: a dataframe. Output of proc_relevant function
   #' @param fsb_counts: a dataframe. Output of proc_fsb_counts function
   #' @param trial_dur: a dataframe. Output of proc_trial_dur funtion
   #'
@@ -31,7 +33,7 @@ reformat = function(blanks, fix_image, fix_text, fsb_counts, trial_dur){
   #'
 
   # check and extract a unique list of participant id
-  participants_id = participants_check(blanks, fix_image, fix_text, fsb_counts, trial_dur)
+  participants_id = participants_check(blanks, fix_image, fix_text, fix_extr, fix_relevant, fsb_counts, trial_dur)
 
   # initialize the return dataframe
   ret = data.frame(Participant = participants_id)
@@ -43,12 +45,18 @@ reformat = function(blanks, fix_image, fix_text, fsb_counts, trial_dur){
     full_join(fix_image, by = c("Participant", "Trial", "Stimulus")) %>%
     full_join(fix_text, by = c("Participant", "Trial", "Stimulus")) %>%
     full_join(fsb_counts, by = c("Participant", "Trial", "Stimulus"))
+  
+  if (!is.na(fix_extr) && !is.na(fix_relevant)) {
+    ret = ret %>%
+      full_join(fix_extr, by = c("Participant", "Trial", "Stimulus")) %>%
+      full_join(fix_relevant, by = c("Participant", "Trial", "Stimulus"))
+  }
   # add the condition based on the stimulus
   ret$Condition = condition_extract(ret)
   return(ret)
 }
 
-participants_check = function(blanks, fix_image, fix_text, fsb_counts, trial_dur){
+participants_check = function(blanks, fix_image, fix_text, fix_extr, fix_relevant, fsb_counts, trial_dur){
   #' helper function to check whether participant are the same
   #' in all the dataframes (i.e. blanks, image fixation, text fixation, fixation saccade and blinks counts
   #' and trial duration) Output the unique participant id list.
@@ -56,6 +64,8 @@ participants_check = function(blanks, fix_image, fix_text, fsb_counts, trial_dur
   #' @param blanks: a dataframe. Output of proc_blanks function
   #' @param fix_image: a dataframe. Output of proc_image function
   #' @param fix_text: a dataframe. Output of proc_text function
+  #' @param fix_extr: a dataframe. Output of proc_extr function
+  #' @param fix_relevant: a dataframe. Output of proc_relevant function
   #' @param fsb_counts: a dataframe. Output of proc_fsb_counts function
   #' @param trial_dur: a dataframe. Output of proc_trial_dur funtion
   #'
@@ -65,15 +75,28 @@ participants_check = function(blanks, fix_image, fix_text, fsb_counts, trial_dur
   base = levels(blanks$Participant)
 
   # retreive unique particiopant id in rest of the datasets
-  data_list = c(levels(fix_image$Participant),
-                levels(fix_text$Participant),
-                levels(fsb_counts$Participant),
-                levels(trial_dur$Participant),
-                levels(blanks$Participant))
-  # compare if any two of them are different
-  if (sum(base == unique(data_list)) != length(base)) {
-    stop("[ERROR] Participants should be the same in all datasets!")
+  if (!is.na(fix_extr) && !is.na(fix_relevant)){
+    data_list = c(list(levels(fix_image$Participant)),
+                  list(levels(fix_text$Participant)),
+                  list(levels(fsb_counts$Participant)),
+                  list(levels(trial_dur$Participant)),
+                  list(levels(blanks$Participant)),
+                  list(levels(fix_extr$Participant)),
+                  list(levels(fix_relevant$Participant)))
+  } else {
+    data_list = c(list(levels(fix_image$Participant)),
+                  list(levels(fix_text$Participant)),
+                  list(levels(fsb_counts$Participant)),
+                  list(levels(trial_dur$Participant)),
+                  list(levels(blanks$Participant)))
   }
+  # compare if any two of them are different
+  for (d in data_list){
+    if (sum(base == d) != length(base)) {
+      stop("[ERROR] Participants should be the same in all datasets!")
+    }
+  }
+ 
 
   return(base)
 }
@@ -219,7 +242,7 @@ check_fix_text = function(fix_text){
   #' @return fix_text: checked and renamed dataframe
   
   # fix the trial number of text fixation
-  fix_image = trial_num_fix(fix_text)
+  fix_text = trial_num_fix(fix_text)
   # check if we have all the variables needed
   # raise error if we miss any
   # ingore all the unnecessary variables
@@ -260,6 +283,128 @@ proc_fix_text = function(fix_text){
   fix_text = select(fix_text, -c(total_time))
   fix_text$Trial = as.character(fix_text$Trial)
   return(fix_text)
+}
+
+check_fix_extr = function(fix_extr){
+  #' Fix the trial number of Extraneous fixation. Check whether the datasets contains all the variables
+  #' we need and ignore unnecessary variables. Rename all the variables.
+  #' 
+  #' The required variables are:
+  #'  -Trial
+  #'  -Stimulus
+  #'  -Participant
+  #'  -AOI Group
+  #'  -Fixation Count
+  #'  -Fixation time 
+  #'  -Fixation time percent
+  #' 
+  #' @param fix_extr: the dataframe to be checked and renamed
+  #' 
+  #' @return fix_extr: checked and renamed dataframe
+  
+  # fix the trial number of Extraneous fixation
+  fix_extr = trial_num_fix(fix_extr)
+  # check if we have all the variables needed
+  # raise error if we miss any
+  # ingore all the unnecessary variables
+  fix_extr = tryCatch(select(fix_extr, c("Trial", "Stimulus",
+                                         "Participant", "AOI.Group",
+                                         "Fixation.Count", "Fixation.Time..ms.",
+                                         "Fixation.Time...." )),
+                      error = function(x) print("[ERROR] Column missing in AOI Fixations"))
+  # rename all the variables
+  names(fix_extr) = c("Trial", "Stimulus",
+                      "Participant", "AOI.Name",
+                      "Extraneous_fix_count", "Extraneous_fix_time",
+                      "fix_time_pct" )
+  return(fix_extr)
+}
+
+proc_fix_extr = function(fix_extr){
+  #' Process the Extraneous fixation dataframe. Aggregrate the variables over
+  #' trial, stimulus and participant. Recalculate the text fixation time percent
+  #' 
+  #' @param fix_extr: the dataframe to be processed
+  #' 
+  #' @return fix_text: processed dataframe
+  
+  # calculate the helper variable
+  fix_extr$total_time = fix_extr$Extraneous_fix_time / (fix_extr$fix_time_pct / 100)
+  fix_extr = select(fix_extr, -c(AOI.Name, fix_time_pct))
+  # aggregate the variables
+  fix_extr = fix_extr %>%
+    group_by(Trial, Stimulus, Participant) %>%
+    summarise(Extraneous_fix_count = sum(Extraneous_fix_count),
+              Extraneous_fix_time = sum(Extraneous_fix_time),
+              total_time = sum(total_time, na.rm = TRUE))
+  # recalculate the text fixation time percent
+  fix_extr$Extraneous_fix_time_pct = fix_extr$Extraneous_fix_time / fix_extr$total_time * 100
+  fix_extr$Extraneous_fix_time_pct = replace(fix_extr$Extraneous_fix_time_pct,
+                                       is.na(fix_extr$Extraneous_fix_time_pct), 0)
+  fix_extr = select(fix_extr, -c(total_time))
+  fix_extr$Trial = as.character(fix_extr$Trial)
+  return(fix_extr)
+}
+
+check_fix_relevant = function(fix_relevant){
+  #' Fix the trial number of relevant fixation. Check whether the datasets contains all the variables
+  #' we need and ignore unnecessary variables. Rename all the variables.
+  #' 
+  #' The required variables are:
+  #'  -Trial
+  #'  -Stimulus
+  #'  -Participant
+  #'  -AOI Group
+  #'  -Fixation Count
+  #'  -Fixation time 
+  #'  -Fixation time percent
+  #' 
+  #' @param fix_relevant: the dataframe to be checked and renamed
+  #' 
+  #' @return fix_relevant: checked and renamed dataframe
+  
+  # fix the trial number of relevant fixation
+  fix_relevant = trial_num_fix(fix_relevant)
+  # check if we have all the variables needed
+  # raise error if we miss any
+  # ingore all the unnecessary variables
+  fix_relevant = tryCatch(select(fix_relevant, c("Trial", "Stimulus",
+                                         "Participant", "AOI.Group",
+                                         "Fixation.Count", "Fixation.Time..ms.",
+                                         "Fixation.Time...." )),
+                      error = function(x) print("[ERROR] Column missing in AOI Fixations"))
+  # rename all the variables
+  names(fix_relevant) = c("Trial", "Stimulus",
+                      "Participant", "AOI.Name",
+                      "Relevant_fix_count", "Relevant_fix_time",
+                      "fix_time_pct" )
+  return(fix_relevant)
+}
+
+proc_fix_relevant = function(fix_relevant){
+  #' Process the Relevant fixation dataframe. Aggregrate the variables over
+  #' trial, stimulus and participant. Recalculate the text fixation time percent
+  #' 
+  #' @param fix_relevant: the dataframe to be processed
+  #' 
+  #' @return fix_relevant: processed dataframe
+  
+  # calculate the helper variable
+  fix_relevant$total_time = fix_relevant$Relevant_fix_time / (fix_relevant$fix_time_pct / 100)
+  fix_relevant = select(fix_relevant, -c(AOI.Name, fix_time_pct))
+  # aggregate the variables
+  fix_relevant = fix_relevant %>%
+    group_by(Trial, Stimulus, Participant) %>%
+    summarise(Relevant_fix_count = sum(Relevant_fix_count),
+              Relevant_fix_time = sum(Relevant_fix_time),
+              total_time = sum(total_time, na.rm = TRUE))
+  # recalculate the text fixation time percent
+  fix_relevant$Relevant_fix_time_pct = fix_relevant$Relevant_fix_time / fix_relevant$total_time * 100
+  fix_relevant$Relevant_fix_time_pct = replace(fix_relevant$Relevant_fix_time_pct,
+                                             is.na(fix_relevant$Relevant_fix_time_pct), 0)
+  fix_relevant = select(fix_relevant, -c(total_time))
+  fix_relevant$Trial = as.character(fix_relevant$Trial)
+  return(fix_relevant)
 }
 
 check_fsb_counts = function(fsb_counts){
@@ -436,4 +581,28 @@ condition_extract = function(data){
   return(con)
 }
 
+drop_zero = function(df){
+  #' Drop the column with all zero in a dataframe
+  #' 
+  #' @param df: the dataframe
+  #' 
+  #' @return df: the dataframe with columns of all
+  #'             zero removed
+  
+  num_col = ncol(df)
+  col_to_drop = c()
+  # find columns with all zeros
+  for(i in 1:num_col){
+    if(class(df[,i]) == 'numeric' || class(df[,i]) == 'integer'){
+      if(sum(df[,i], na.rm = TRUE) == 0){
+        col_to_drop = c(col_to_drop, i)
+      }
+    }
+  }
+  # drop them
+  if(length(col_to_drop) != 0){
+    df = df[,-col_to_drop]
+  }
+  return(df)
+}
 
