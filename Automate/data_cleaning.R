@@ -21,6 +21,7 @@ version = as.integer(readline(prompt = "Please enter version number and press [e
 eye = readline(prompt = "Please enter eye we want to focus (left or right) and press [enter] to continue: ")
 export_name = readline(prompt = "Please enter the export file name (without extension) and press [enter] to continue: ")
 sep = readline(prompt = "Please enter last trial for the first condition and press [enter] to continue: ")
+sep = as.numeric(sep)
 cond1 = readline(prompt = "Please enter the first condition name and press [enter] to continue: ")
 cond2 = readline(prompt = "Please enter the second condition name and press [enter] to continue: ")
 # review the information you entered
