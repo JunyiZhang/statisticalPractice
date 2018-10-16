@@ -28,8 +28,11 @@ alt_df$Trial = as.character(alt_df$Trial)
 source("./functions/reformat_functions.R")
 print("Processing AOI Blanks")
 blanks = blanks %>%
-          check_blanks() %>%
-          proc_blanks()
+         check_blanks() %>%
+         proc_blanks()
+
+fixation$AOI.Group = as.character(fixation$AOI.Group)
+fixation$AOI.Group[fixation$AOI.Group == ""] = 'Background'
 
 print("Processing AOI Fixations")
 fix_image = filter(fixation, AOI.Group != "Text") %>%
@@ -49,6 +52,9 @@ if ('Extraneous' %in% unique(fixation$AOI.Group) &&
   fix_relevant = filter(fixation, AOI.Group == 'Relevant') %>%
     check_fix_relevant() %>%
     proc_fix_relevant()
+  fix_background = filter(fixation, AOI.Group == 'Background') %>%
+    check_fix_background() %>%
+    proc_fix_background()
 }
 
 print("Processing Fixations, saccades, and blink counts")
@@ -62,7 +68,7 @@ trial_dur = trial_dur %>%
   proc_trial_dur()
 
 print("Merging files")
-# merge five dataframe to reformatted data
+# merge dataframes created above to reformatted data
 ret = reformat(blanks, fix_image, fix_text, fsb_counts, trial_dur, fix_extr, fix_relevant)
 ret$Participant = as.character(ret$Participant)
 # merge the reformatted data with alternation stats

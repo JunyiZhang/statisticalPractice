@@ -14,7 +14,7 @@ if( !require("dplyr")) {
 }
 
 
-reformat = function(blanks, fix_image, fix_text, fsb_counts, trial_dur, fix_extr = NA, fix_relevant = NA){
+reformat = function(blanks, fix_image, fix_text, fsb_counts, trial_dur, fix_extr = NA, fix_relevant = NA, fix_background = NA){
   #' join blanks, image fixation, text fixation, fixation saccade and blinks counts
   #' and trial duration together based on participant id, stimulus and trial number.
   #'
@@ -23,9 +23,10 @@ reformat = function(blanks, fix_image, fix_text, fsb_counts, trial_dur, fix_extr
   #'
   #' @param blanks: a dataframe. Output of proc_blanks function
   #' @param fix_image: a dataframe. Output of proc_image function
-  #' @param fix_text: a dataframe. Output of proc_text function
-  #' @param fix_extr: a dataframe. Output of proc_extr function
-  #' @param fix_relevant: a dataframe. Output of proc_relevant function
+  #' @param fix_text: a dataframe. Output of proc_fix_text function
+  #' @param fix_extr: a dataframe. Output of proc_fix_extr function
+  #' @param fix_relevant: a dataframe. Output of proc_fix_relevant function
+  #' @param fix_background: a dataframe. Output of proc_fix_background functon
   #' @param fsb_counts: a dataframe. Output of proc_fsb_counts function
   #' @param trial_dur: a dataframe. Output of proc_trial_dur funtion
   #'
@@ -33,7 +34,7 @@ reformat = function(blanks, fix_image, fix_text, fsb_counts, trial_dur, fix_extr
   #'
 
   # check and extract a unique list of participant id
-  participants_id = participants_check(blanks, fix_image, fix_text, fix_extr, fix_relevant, fsb_counts, trial_dur)
+  participants_id = participants_check(blanks, fix_image, fix_text, fix_extr, fix_relevant, fix_background, fsb_counts, trial_dur)
 
   # initialize the return dataframe
   ret = data.frame(Participant = participants_id)
@@ -49,23 +50,25 @@ reformat = function(blanks, fix_image, fix_text, fsb_counts, trial_dur, fix_extr
   if (!is.na(fix_extr) && !is.na(fix_relevant)) {
     ret = ret %>%
       full_join(fix_extr, by = c("Participant", "Trial", "Stimulus")) %>%
-      full_join(fix_relevant, by = c("Participant", "Trial", "Stimulus"))
+      full_join(fix_relevant, by = c("Participant", "Trial", "Stimulus")) %>%
+      full_join(fix_background, by = c("Participant", "Trial", "Stimulus"))
   }
   # add the condition based on the stimulus
   ret$Condition = condition_extract(ret)
   return(ret)
 }
 
-participants_check = function(blanks, fix_image, fix_text, fix_extr, fix_relevant, fsb_counts, trial_dur){
+participants_check = function(blanks, fix_image, fix_text, fix_extr, fix_relevant, fix_background, fsb_counts, trial_dur){
   #' helper function to check whether participant are the same
   #' in all the dataframes (i.e. blanks, image fixation, text fixation, fixation saccade and blinks counts
   #' and trial duration) Output the unique participant id list.
   #'
   #' @param blanks: a dataframe. Output of proc_blanks function
   #' @param fix_image: a dataframe. Output of proc_image function
-  #' @param fix_text: a dataframe. Output of proc_text function
-  #' @param fix_extr: a dataframe. Output of proc_extr function
-  #' @param fix_relevant: a dataframe. Output of proc_relevant function
+  #' @param fix_text: a dataframe. Output of proc_fix_text function
+  #' @param fix_extr: a dataframe. Output of proc_fix_extr function
+  #' @param fix_relevant: a dataframe. Output of proc_fix_relevant function
+  #' @param fix_background: a dataframe. Output of proc_fix_background function
   #' @param fsb_counts: a dataframe. Output of proc_fsb_counts function
   #' @param trial_dur: a dataframe. Output of proc_trial_dur funtion
   #'
@@ -75,14 +78,15 @@ participants_check = function(blanks, fix_image, fix_text, fix_extr, fix_relevan
   base = levels(blanks$Participant)
 
   # retreive unique particiopant id in rest of the datasets
-  if (!is.na(fix_extr) && !is.na(fix_relevant)){
+  if (!is.na(fix_extr) && !is.na(fix_relevant )){
     data_list = c(list(levels(fix_image$Participant)),
                   list(levels(fix_text$Participant)),
                   list(levels(fsb_counts$Participant)),
                   list(levels(trial_dur$Participant)),
                   list(levels(blanks$Participant)),
                   list(levels(fix_extr$Participant)),
-                  list(levels(fix_relevant$Participant)))
+                  list(levels(fix_relevant$Participant)),
+                  list(levels(fix_background$Participant)))
   } else {
     data_list = c(list(levels(fix_image$Participant)),
                   list(levels(fix_text$Participant)),
@@ -406,6 +410,69 @@ proc_fix_relevant = function(fix_relevant){
   fix_relevant$Trial = as.character(fix_relevant$Trial)
   return(fix_relevant)
 }
+
+check_fix_background = function(fix_background){
+  #' Fix the trial number of background fixation. Check whether the datasets contains all the variables
+  #' we need and ignore unnecessary variables. Rename all the variables.
+  #' 
+  #' The required variables are:
+  #'  -Trial
+  #'  -Stimulus
+  #'  -Participant
+  #'  -AOI Group
+  #'  -Fixation Count
+  #'  -Fixation time 
+  #'  -Fixation time percent
+  #' 
+  #' @param fix_background: the dataframe to be checked and renamed
+  #' 
+  #' @return fix_background: checked and renamed dataframe
+  
+  # fix the trial number of background fixation
+  fix_background = trial_num_fix(fix_background)
+  # check if we have all the variables needed
+  # raise error if we miss any
+  # ingore all the unnecessary variables
+  fix_background = tryCatch(select(fix_background, c("Trial", "Stimulus",
+                                                 "Participant", "AOI.Group",
+                                                 "Fixation.Count", "Fixation.Time..ms.",
+                                                 "Fixation.Time...." )),
+                          error = function(x) print("[ERROR] Column missing in AOI Fixations"))
+  # rename all the variables
+  names(fix_background) = c("Trial", "Stimulus",
+                          "Participant", "AOI.Name",
+                          "Background_fix_count", "Background_fix_time",
+                          "fix_time_pct" )
+  return(fix_background)
+}
+
+proc_fix_background = function(fix_background){
+  #' Process the Background fixation dataframe. Aggregrate the variables over
+  #' trial, stimulus and participant. Recalculate the text fixation time percent
+  #' 
+  #' @param fix_background: the dataframe to be processed
+  #' 
+  #' @return fix_background: processed dataframe
+  
+  # calculate the helper variable
+  fix_background$total_time = fix_background$Background_fix_time / (fix_background$fix_time_pct / 100)
+  fix_background = select(fix_background, -c(AOI.Name, fix_time_pct))
+  # aggregate the variables
+  fix_background = fix_background %>%
+    group_by(Trial, Stimulus, Participant) %>%
+    summarise(Background_fix_count = sum(Background_fix_count),
+              Background_fix_time = sum(Background_fix_time),
+              total_time = sum(total_time, na.rm = TRUE))
+  # recalculate the text fixation time percent
+  fix_background$Background_fix_time_pct = fix_background$Background_fix_time / fix_background$total_time * 100
+  fix_background$Background_fix_time_pct = replace(fix_background$Background_fix_time_pct,
+                                               is.na(fix_background$Background_fix_time_pct), 0)
+  fix_background = select(fix_background, -c(total_time))
+  fix_background$Trial = as.character(fix_background$Trial)
+  return(fix_background)
+}
+
+
 
 check_fsb_counts = function(fsb_counts){
   #' Fix the trial number of fixation, saccade and blink counts. Check if we have all 
